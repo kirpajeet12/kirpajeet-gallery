@@ -1,8 +1,18 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { uploadData } from 'aws-amplify/storage';
 import { client } from '@/lib/client';
 import type { TileData } from '@/app/page';
+
+async function saveMusicToS3(previewUrl: string): Promise<string> {
+  const res = await fetch(`/api/music-proxy?url=${encodeURIComponent(previewUrl)}`);
+  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+  const blob = await res.blob();
+  const key = `music/${Math.floor(Date.now() / 1000)}-preview.mp3`;
+  await uploadData({ path: key, data: blob }).result;
+  return key;
+}
 
 type DeezerTrack = {
   id: number;
@@ -50,8 +60,8 @@ export default function EditModal({
       previewAudio.current.pause();
       setPlayingId(null);
     } else {
-      previewAudio.current.src = `/api/music-proxy?url=${encodeURIComponent(track.preview)}`;
-      previewAudio.current.play();
+      previewAudio.current.src = track.preview;
+      previewAudio.current.play().catch(() => {});
       setPlayingId(track.id);
       previewAudio.current.onended = () => setPlayingId(null);
     }
@@ -73,11 +83,14 @@ export default function EditModal({
     }
     setBusy(true);
     try {
-      const musicUpdate = selectedTrack
-        ? { musicKey: selectedTrack.preview }
-        : keepMusic
-        ? {}
-        : { musicKey: null };
+      let musicUpdate: { musicKey?: string | null } = {};
+      if (selectedTrack) {
+        setStatus('Saving music to your gallery…');
+        const s3Key = await saveMusicToS3(selectedTrack.preview);
+        musicUpdate = { musicKey: s3Key };
+      } else if (!keepMusic) {
+        musicUpdate = { musicKey: null };
+      }
 
       await client.models.Memory.update(
         { id: tile.dbId, caption: caption || null, ...musicUpdate },

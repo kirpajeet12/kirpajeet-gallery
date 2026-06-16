@@ -60,11 +60,7 @@ function GalleryApp() {
           } as TileData;
         })
       );
-      const result = withUrls.reverse();
-      console.log('DB records found:', dbRecords.length);
-      console.log('Tiles with musicKey:', result.filter(t => t.musicKey).length, '/', result.length);
-      result.forEach(t => console.log(' -', t.key, '| musicKey:', t.musicKey ?? 'NONE'));
-      setTiles(result);
+      setTiles(withUrls.reverse());
     } catch (e) {
       console.error('Failed to load photos:', e);
     }

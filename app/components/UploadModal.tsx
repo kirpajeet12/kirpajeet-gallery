@@ -12,6 +12,15 @@ type DeezerTrack = {
   album: { cover_small: string };
 };
 
+async function saveMusicToS3(previewUrl: string, stamp: number): Promise<string> {
+  const res = await fetch(`/api/music-proxy?url=${encodeURIComponent(previewUrl)}`);
+  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+  const blob = await res.blob();
+  const key = `music/${stamp}-preview.mp3`;
+  await uploadData({ path: key, data: blob }).result;
+  return key;
+}
+
 export default function UploadModal({
   onClose,
   onUploaded,
@@ -29,7 +38,6 @@ export default function UploadModal({
   const [searching, setSearching] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<DeezerTrack | null>(null);
   const [playingId, setPlayingId] = useState<number | null>(null);
-
   const previewAudio = useRef<HTMLAudioElement | null>(null);
 
   async function searchMusic() {
@@ -39,9 +47,7 @@ export default function UploadModal({
       const res = await fetch(`/api/music-search?q=${encodeURIComponent(query)}`);
       const json = await res.json();
       setResults(json.data ?? []);
-    } catch {
-      setResults([]);
-    }
+    } catch { setResults([]); }
     setSearching(false);
   }
 
@@ -51,8 +57,8 @@ export default function UploadModal({
       previewAudio.current.pause();
       setPlayingId(null);
     } else {
-      previewAudio.current.src = `/api/music-proxy?url=${encodeURIComponent(track.preview)}`;
-      previewAudio.current.play();
+      previewAudio.current.src = track.preview;
+      previewAudio.current.play().catch(() => {});
       setPlayingId(track.id);
       previewAudio.current.onended = () => setPlayingId(null);
     }
@@ -66,45 +72,36 @@ export default function UploadModal({
     setQuery('');
   }
 
-  function clearTrack() {
-    setSelectedTrack(null);
-    previewAudio.current?.pause();
-    setPlayingId(null);
-  }
-
   async function handleSave() {
     if (!photo) { setStatus('Pick a photo first.'); return; }
     setBusy(true);
     try {
       const stamp = Math.floor(Date.now() / 1000);
       const photoKey = `photos/${stamp}-${photo.name}`;
+
       setStatus('Uploading photo…');
       await uploadData({ path: photoKey, data: photo }).result;
 
-      setStatus('Saving to database…');
+      let musicKey: string | undefined;
+      if (selectedTrack) {
+        setStatus('Saving music to your gallery…');
+        musicKey = await saveMusicToS3(selectedTrack.preview, stamp);
+      }
+
+      setStatus('Saving…');
       const result = await client.models.Memory.create(
-        {
-          imageKey: photoKey,
-          musicKey: selectedTrack?.preview ?? undefined,
-          caption: caption || undefined,
-          order: stamp,
-        },
+        { imageKey: photoKey, musicKey, caption: caption || undefined, order: stamp },
         { authMode: 'userPool' }
       );
 
-      if (result.errors && result.errors.length > 0) {
+      if (result.errors?.length) {
         throw new Error(result.errors.map((e: any) => e.message).join(', '));
       }
 
-      console.log('Saved record:', result.data);
-      setStatus('Done ✓ — musicKey: ' + (result.data?.musicKey ? 'saved' : 'not saved'));
-      setTimeout(() => {
-        onUploaded();
-        onClose();
-      }, 1500);
+      setStatus('Done ✓');
+      setTimeout(() => { onUploaded(); onClose(); }, 800);
     } catch (e: any) {
-      console.error('Save failed:', e);
-      setStatus('❌ Error: ' + (e?.message ?? 'upload failed'));
+      setStatus('❌ ' + (e?.message ?? 'upload failed'));
       setBusy(false);
     }
   }
@@ -114,17 +111,11 @@ export default function UploadModal({
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>Add a moment</h2>
 
-        {/* Photo picker */}
         <div className="field">
           <label>Photo</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-          />
+          <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
         </div>
 
-        {/* Music search */}
         <div className="field">
           <label>Music (optional)</label>
 
@@ -135,7 +126,7 @@ export default function UploadModal({
                 <span className="music-title">{selectedTrack.title}</span>
                 <span className="music-artist">{selectedTrack.artist.name}</span>
               </div>
-              <button className="music-remove" onClick={clearTrack}>✕</button>
+              <button className="music-remove" onClick={() => setSelectedTrack(null)}>✕</button>
             </div>
           ) : (
             <>
@@ -148,11 +139,7 @@ export default function UploadModal({
                   onKeyDown={(e) => e.key === 'Enter' && searchMusic()}
                   className="music-search-input"
                 />
-                <button
-                  className="btn music-search-btn"
-                  onClick={searchMusic}
-                  disabled={searching || !query.trim()}
-                >
+                <button className="btn music-search-btn" onClick={searchMusic} disabled={searching || !query.trim()}>
                   {searching ? '…' : 'Search'}
                 </button>
               </div>
@@ -166,16 +153,10 @@ export default function UploadModal({
                         <span className="music-title">{track.title}</span>
                         <span className="music-artist">{track.artist.name}</span>
                       </div>
-                      <button
-                        className="music-play-btn"
-                        onClick={() => playPreview(track)}
-                        title={playingId === track.id ? 'Pause' : 'Preview'}
-                      >
+                      <button className="music-play-btn" onClick={() => playPreview(track)}>
                         {playingId === track.id ? '⏸' : '▶'}
                       </button>
-                      <button className="btn music-use-btn" onClick={() => selectTrack(track)}>
-                        Use
-                      </button>
+                      <button className="btn music-use-btn" onClick={() => selectTrack(track)}>Use</button>
                     </div>
                   ))}
                 </div>
@@ -184,7 +165,6 @@ export default function UploadModal({
           )}
         </div>
 
-        {/* Caption */}
         <div className="field">
           <label>Caption (optional)</label>
           <input
@@ -198,12 +178,8 @@ export default function UploadModal({
         <div className="status">{status}</div>
 
         <div className="row">
-          <button className="btn" onClick={handleSave} disabled={busy}>
-            {busy ? 'Working…' : 'Save'}
-          </button>
-          <button className="btn btn-ghost" onClick={onClose} disabled={busy}>
-            Cancel
-          </button>
+          <button className="btn" onClick={handleSave} disabled={busy}>{busy ? 'Working…' : 'Save'}</button>
+          <button className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
         </div>
       </div>
     </div>

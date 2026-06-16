@@ -21,49 +21,36 @@ export default function StoryViewer({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const current = memories[index];
 
-  // Load + play music when slide changes
   useEffect(() => {
     let cancelled = false;
     setPaused(false);
 
     async function loadMusic() {
       if (!audioRef.current) return;
-
       if (!current.musicKey) {
-        console.log('No musicKey for this slide');
         audioRef.current.pause();
         audioRef.current.removeAttribute('src');
         setMusicState('none');
         return;
       }
 
-      console.log('Loading music from:', current.musicKey);
       setMusicState('loading');
-
       try {
-        const src = current.musicKey.startsWith('https://')
-          ? current.musicKey  // direct Deezer URL — no proxy
-          : (await getUrl({ path: current.musicKey })).url.toString();
+        let src: string;
+        if (current.musicKey.startsWith('https://')) {
+          src = current.musicKey;
+        } else {
+          src = (await getUrl({ path: current.musicKey, options: { expiresIn: 3600 } })).url.toString();
+        }
 
         if (cancelled) return;
 
-        await new Promise<void>((resolve, reject) => {
-          const audio = audioRef.current!;
-          audio.onerror = () => {
-            const err = audio.error;
-            console.error('Audio element error:', err?.code, err?.message);
-            reject(new Error(`Audio error ${err?.code}: ${err?.message}`));
-          };
-          audio.src = src;
-          audio.play().then(resolve).catch(reject);
-        });
-
+        const audio = audioRef.current!;
+        audio.src = src;
+        await audio.play();
         if (!cancelled) setMusicState('playing');
       } catch (e) {
-        if (!cancelled) {
-          console.error('Music playback failed:', e);
-          setMusicState('error');
-        }
+        if (!cancelled) setMusicState('error');
       }
     }
 
@@ -74,7 +61,6 @@ export default function StoryViewer({
     };
   }, [index, current.musicKey]);
 
-  // Auto-advance (pause when music paused)
   useEffect(() => {
     if (paused) return;
     const t = setTimeout(next, SLIDE_MS);
@@ -113,7 +99,6 @@ export default function StoryViewer({
     <div className="story-overlay" onClick={onClose}>
       <div className="story-card" onClick={(e) => e.stopPropagation()}>
 
-        {/* Progress bars */}
         <div className="story-bars">
           {memories.map((_, i) => (
             <div className="story-bar" key={i}>
@@ -125,7 +110,6 @@ export default function StoryViewer({
           ))}
         </div>
 
-        {/* Top row */}
         <div className="story-toprow">
           {current.musicKey && (
             <button
@@ -139,15 +123,12 @@ export default function StoryViewer({
           <button className="story-close" onClick={onClose}>✕</button>
         </div>
 
-        {/* Photo */}
         <img className="story-img" src={current.url} alt={current.caption ?? ''} />
 
-        {/* Caption */}
         {current.caption && (
           <div className="story-caption">{current.caption}</div>
         )}
 
-        {/* Tap zones */}
         <button className="story-nav story-nav-left" onClick={prev} aria-label="previous" />
         <button className="story-nav story-nav-right" onClick={next} aria-label="next" />
       </div>
