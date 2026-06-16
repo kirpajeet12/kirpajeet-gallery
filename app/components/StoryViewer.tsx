@@ -42,14 +42,22 @@ export default function StoryViewer({
 
       try {
         const src = current.musicKey.startsWith('https://')
-          ? `/api/music-proxy?url=${encodeURIComponent(current.musicKey)}`
+          ? current.musicKey  // direct Deezer URL — no proxy
           : (await getUrl({ path: current.musicKey })).url.toString();
 
         if (cancelled) return;
 
-        audioRef.current.src = src;
-        audioRef.current.load();
-        await audioRef.current.play();
+        await new Promise<void>((resolve, reject) => {
+          const audio = audioRef.current!;
+          audio.onerror = () => {
+            const err = audio.error;
+            console.error('Audio element error:', err?.code, err?.message);
+            reject(new Error(`Audio error ${err?.code}: ${err?.message}`));
+          };
+          audio.src = src;
+          audio.play().then(resolve).catch(reject);
+        });
+
         if (!cancelled) setMusicState('playing');
       } catch (e) {
         if (!cancelled) {
