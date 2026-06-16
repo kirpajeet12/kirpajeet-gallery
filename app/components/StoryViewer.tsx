@@ -37,7 +37,7 @@ export default function StoryViewer({
 
       try {
         const src = current.musicKey.startsWith('https://')
-          ? current.musicKey
+          ? `/api/music-proxy?url=${encodeURIComponent(current.musicKey)}`
           : (await getUrl({ path: current.musicKey })).url.toString();
 
         if (cancelled) return;

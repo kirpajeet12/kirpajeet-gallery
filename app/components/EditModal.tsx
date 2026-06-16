@@ -50,7 +50,7 @@ export default function EditModal({
       previewAudio.current.pause();
       setPlayingId(null);
     } else {
-      previewAudio.current.src = track.preview;
+      previewAudio.current.src = `/api/music-proxy?url=${encodeURIComponent(track.preview)}`;
       previewAudio.current.play();
       setPlayingId(track.id);
       previewAudio.current.onended = () => setPlayingId(null);
