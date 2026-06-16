@@ -86,9 +86,6 @@ export default function UploadModal({
         {
           imageKey: photoKey,
           musicKey: selectedTrack?.preview ?? undefined,
-          musicTitle: selectedTrack
-            ? `${selectedTrack.title} — ${selectedTrack.artist.name}`
-            : undefined,
           caption: caption || undefined,
           order: stamp,
         },

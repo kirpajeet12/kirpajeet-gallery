@@ -76,7 +76,7 @@ export default function StoryViewer({
 
   const musicLabel =
     musicState === 'loading' ? '♪ loading…' :
-    musicState === 'playing' ? `♪ ${current.musicTitle ?? 'playing'}` :
+    musicState === 'playing' ? '♪ playing' :
     musicState === 'error'   ? '♪ could not play' :
     null;
 

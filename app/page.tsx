@@ -14,7 +14,6 @@ export type TileData = {
   url: string;
   caption?: string;
   musicKey?: string;
-  musicTitle?: string;
   dbId?: string;
 };
 
@@ -55,7 +54,6 @@ function GalleryApp() {
             url: url.toString(),
             caption: meta?.caption ?? undefined,
             musicKey: meta?.musicKey ?? undefined,
-            musicTitle: meta?.musicTitle ?? undefined,
             dbId: meta?.id ?? undefined,
           } as TileData;
         })

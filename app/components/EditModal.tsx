@@ -74,10 +74,10 @@ export default function EditModal({
     setBusy(true);
     try {
       const musicUpdate = selectedTrack
-        ? { musicKey: selectedTrack.preview, musicTitle: `${selectedTrack.title} — ${selectedTrack.artist.name}` }
+        ? { musicKey: selectedTrack.preview }
         : keepMusic
         ? {}
-        : { musicKey: null, musicTitle: null };
+        : { musicKey: null };
 
       await client.models.Memory.update(
         { id: tile.dbId, caption: caption || null, ...musicUpdate },
@@ -94,7 +94,7 @@ export default function EditModal({
     }
   }
 
-  const hasMusic = tile.musicTitle && keepMusic && !selectedTrack;
+  const hasMusic = tile.musicKey && keepMusic && !selectedTrack;
 
   return (
     <div className="overlay" onClick={onClose}>
@@ -120,7 +120,7 @@ export default function EditModal({
 
           {hasMusic && (
             <div className="music-selected" style={{ marginBottom: 8 }}>
-              <span className="music-title">♪ {tile.musicTitle}</span>
+              <span className="music-title">♪ music attached</span>
               <button className="music-remove" onClick={() => setKeepMusic(false)}>✕</button>
             </div>
           )}
@@ -132,7 +132,7 @@ export default function EditModal({
                 <span className="music-title">{selectedTrack.title}</span>
                 <span className="music-artist">{selectedTrack.artist.name}</span>
               </div>
-              <button className="music-remove" onClick={() => { setSelectedTrack(null); setKeepMusic(!!tile.musicTitle); }}>✕</button>
+              <button className="music-remove" onClick={() => { setSelectedTrack(null); setKeepMusic(!!tile.musicKey); }}>✕</button>
             </div>
           ) : (
             <>
