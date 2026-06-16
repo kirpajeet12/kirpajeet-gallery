@@ -11,7 +11,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.guest().to(['read']),
-      allow.authenticated('identityPool').to(['create', 'read', 'update', 'delete']),
+      allow.authenticated().to(['create', 'read', 'update', 'delete']),
     ]),
 });
 

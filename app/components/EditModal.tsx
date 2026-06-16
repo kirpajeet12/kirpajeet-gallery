@@ -79,11 +79,10 @@ export default function EditModal({
         ? {}
         : { musicKey: null, musicTitle: null };
 
-      await client.models.Memory.update({
-        id: tile.dbId,
-        caption: caption || null,
-        ...musicUpdate,
-      });
+      await client.models.Memory.update(
+        { id: tile.dbId, caption: caption || null, ...musicUpdate },
+        { authMode: 'userPool' }
+      );
 
       setStatus('Saved ✓');
       onSaved();

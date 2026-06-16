@@ -79,7 +79,7 @@ function GalleryApp() {
         await remove({ path: tile.musicKey }).catch(() => {});
       }
       if (tile.dbId) {
-        await client.models.Memory.delete({ id: tile.dbId });
+        await client.models.Memory.delete({ id: tile.dbId }, { authMode: 'userPool' });
       }
       setTiles((prev) => prev.filter((t) => t.key !== tile.key));
     } catch (e) {

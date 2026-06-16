@@ -82,15 +82,18 @@ export default function UploadModal({
       await uploadData({ path: photoKey, data: photo }).result;
 
       setStatus('Saving…');
-      await client.models.Memory.create({
-        imageKey: photoKey,
-        musicKey: selectedTrack?.preview ?? undefined,
-        musicTitle: selectedTrack
-          ? `${selectedTrack.title} — ${selectedTrack.artist.name}`
-          : undefined,
-        caption: caption || undefined,
-        order: stamp,
-      });
+      await client.models.Memory.create(
+        {
+          imageKey: photoKey,
+          musicKey: selectedTrack?.preview ?? undefined,
+          musicTitle: selectedTrack
+            ? `${selectedTrack.title} — ${selectedTrack.artist.name}`
+            : undefined,
+          caption: caption || undefined,
+          order: stamp,
+        },
+        { authMode: 'userPool' }
+      );
 
       setStatus('Done ✓');
       onUploaded();
