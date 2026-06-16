@@ -16,34 +16,51 @@ export default function StoryViewer({
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(startIndex);
+  const [musicState, setMusicState] = useState<'none' | 'loading' | 'playing' | 'error'>('none');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const current = memories[index];
 
-  // Load music for current slide
   useEffect(() => {
     let cancelled = false;
-    if (current.musicKey) {
-      const isUrl = current.musicKey.startsWith('https://');
-      if (isUrl) {
-        if (audioRef.current) {
-          audioRef.current.src = current.musicKey;
-          audioRef.current.play().catch(() => {});
-        }
-      } else {
-        getUrl({ path: current.musicKey }).then(({ url }) => {
-          if (cancelled || !audioRef.current) return;
-          audioRef.current.src = url.toString();
-          audioRef.current.play().catch(() => {});
-        });
+
+    async function loadMusic() {
+      if (!audioRef.current) return;
+
+      if (!current.musicKey) {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute('src');
+        setMusicState('none');
+        return;
       }
-    } else if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
+
+      setMusicState('loading');
+
+      try {
+        const src = current.musicKey.startsWith('https://')
+          ? current.musicKey
+          : (await getUrl({ path: current.musicKey })).url.toString();
+
+        if (cancelled) return;
+
+        audioRef.current.src = src;
+        await audioRef.current.play();
+        if (!cancelled) setMusicState('playing');
+      } catch (e) {
+        if (!cancelled) {
+          console.error('Music playback failed:', e);
+          setMusicState('error');
+        }
+      }
     }
+
+    loadMusic();
     return () => { cancelled = true; };
   }, [index, current.musicKey]);
 
-  // Auto-advance
+  useEffect(() => {
+    setMusicState(current.musicKey ? 'loading' : 'none');
+  }, [index]);
+
   useEffect(() => {
     const t = setTimeout(next, SLIDE_MS);
     return () => clearTimeout(t);
@@ -57,11 +74,16 @@ export default function StoryViewer({
     if (index > 0) setIndex(i => i - 1);
   }
 
+  const musicLabel =
+    musicState === 'loading' ? '♪ loading…' :
+    musicState === 'playing' ? `♪ ${current.musicTitle ?? 'playing'}` :
+    musicState === 'error'   ? '♪ could not play' :
+    null;
+
   return (
     <div className="story-overlay" onClick={onClose}>
       <div className="story-card" onClick={(e) => e.stopPropagation()}>
 
-        {/* Progress bars */}
         <div className="story-bars">
           {memories.map((_, i) => (
             <div className="story-bar" key={i}>
@@ -73,25 +95,21 @@ export default function StoryViewer({
           ))}
         </div>
 
-        {/* Top row: music indicator + close */}
         <div className="story-toprow">
-          {current.musicKey && (
-            <span className="story-music">
-              ♪ {current.musicTitle ?? 'playing'}
+          {musicLabel && (
+            <span className={`story-music ${musicState === 'error' ? 'story-music-error' : ''}`}>
+              {musicLabel}
             </span>
           )}
           <button className="story-close" onClick={onClose}>✕</button>
         </div>
 
-        {/* Photo */}
         <img className="story-img" src={current.url} alt={current.caption ?? ''} />
 
-        {/* Caption */}
         {current.caption && (
           <div className="story-caption">{current.caption}</div>
         )}
 
-        {/* Tap zones: left = prev, right = next */}
         <button className="story-nav story-nav-left" onClick={prev} aria-label="previous" />
         <button className="story-nav story-nav-right" onClick={next} aria-label="next" />
       </div>
