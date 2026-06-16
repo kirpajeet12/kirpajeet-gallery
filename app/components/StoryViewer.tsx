@@ -23,11 +23,19 @@ export default function StoryViewer({
   useEffect(() => {
     let cancelled = false;
     if (current.musicKey) {
-      getUrl({ path: current.musicKey }).then(({ url }) => {
-        if (cancelled || !audioRef.current) return;
-        audioRef.current.src = url.toString();
-        audioRef.current.play().catch(() => {});
-      });
+      const isUrl = current.musicKey.startsWith('https://');
+      if (isUrl) {
+        if (audioRef.current) {
+          audioRef.current.src = current.musicKey;
+          audioRef.current.play().catch(() => {});
+        }
+      } else {
+        getUrl({ path: current.musicKey }).then(({ url }) => {
+          if (cancelled || !audioRef.current) return;
+          audioRef.current.src = url.toString();
+          audioRef.current.play().catch(() => {});
+        });
+      }
     } else if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.removeAttribute('src');
@@ -67,7 +75,11 @@ export default function StoryViewer({
 
         {/* Top row: music indicator + close */}
         <div className="story-toprow">
-          {current.musicKey && <span className="story-music">♪ playing</span>}
+          {current.musicKey && (
+            <span className="story-music">
+              ♪ {current.musicTitle ?? 'playing'}
+            </span>
+          )}
           <button className="story-close" onClick={onClose}>✕</button>
         </div>
 

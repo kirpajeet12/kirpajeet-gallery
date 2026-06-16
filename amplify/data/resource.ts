@@ -6,6 +6,7 @@ const schema = a.schema({
       caption: a.string(),
       imageKey: a.string().required(),
       musicKey: a.string(),
+      musicTitle: a.string(),
       order: a.integer().default(0),
     })
     .authorization((allow) => [

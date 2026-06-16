@@ -204,6 +204,119 @@ button {
   min-height: 18px;
 }
 
+/* ---------- Music search ---------- */
+.music-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.music-search-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 13px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.music-search-btn {
+  padding: 10px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.music-results {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.music-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.music-result:last-child { border-bottom: none; }
+
+.music-result-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.music-title {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.music-artist {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.music-play-btn {
+  background: var(--border);
+  border: none;
+  color: var(--text);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.music-use-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.music-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.music-selected-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.music-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
 /* ---------- Story viewer — Instagram popup ---------- */
 .story-overlay {
   position: fixed;
