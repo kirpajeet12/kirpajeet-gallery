@@ -81,8 +81,8 @@ export default function UploadModal({
       setStatus('Uploading photo…');
       await uploadData({ path: photoKey, data: photo }).result;
 
-      setStatus('Saving…');
-      await client.models.Memory.create(
+      setStatus('Saving to database…');
+      const result = await client.models.Memory.create(
         {
           imageKey: photoKey,
           musicKey: selectedTrack?.preview ?? undefined,
@@ -92,12 +92,19 @@ export default function UploadModal({
         { authMode: 'userPool' }
       );
 
-      setStatus('Done ✓');
-      onUploaded();
-      onClose();
+      if (result.errors && result.errors.length > 0) {
+        throw new Error(result.errors.map((e: any) => e.message).join(', '));
+      }
+
+      console.log('Saved record:', result.data);
+      setStatus('Done ✓ — musicKey: ' + (result.data?.musicKey ? 'saved' : 'not saved'));
+      setTimeout(() => {
+        onUploaded();
+        onClose();
+      }, 1500);
     } catch (e: any) {
-      setStatus('Error: ' + (e?.message ?? 'upload failed'));
-    } finally {
+      console.error('Save failed:', e);
+      setStatus('❌ Error: ' + (e?.message ?? 'upload failed'));
       setBusy(false);
     }
   }

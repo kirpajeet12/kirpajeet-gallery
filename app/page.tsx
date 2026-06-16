@@ -123,6 +123,7 @@ function GalleryApp() {
         {tiles.map((t, i) => (
           <div className="tile" key={t.key} onClick={() => setStoryAt(i)}>
             <img src={t.url} alt={t.caption ?? ''} loading="lazy" />
+            {t.musicKey && <div className="music-badge">♪</div>}
             {(t.caption || t.musicKey) && (
               <div className="meta">
                 {t.musicKey && <span className="note">♪</span>}

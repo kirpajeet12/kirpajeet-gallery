@@ -135,6 +135,21 @@ button {
   grid-column: 1 / -1;
 }
 
+/* Music badge — top-left corner of tile */
+.music-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0,0,0,0.55);
+  color: var(--gold-soft);
+  font-size: 12px;
+  padding: 3px 7px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* Edit / Delete buttons — appear on tile hover */
 .tile-actions {
   position: absolute;
