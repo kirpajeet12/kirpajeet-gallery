@@ -3,12 +3,12 @@
 const teams = [
   {
     name: 'Punjab Kings',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/4/4b/Punjab_Kings_Logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d4/Punjab_Kings_Logo.svg/250px-Punjab_Kings_Logo.svg.png',
     color: '#ED1B24',
   },
   {
     name: 'NY Knicks',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/2/25/New_york_knicks.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/2/25/New_York_Knicks_logo.svg/250px-New_York_Knicks_logo.svg.png',
     color: '#006BB6',
   },
   {
@@ -18,7 +18,7 @@ const teams = [
   },
   {
     name: 'Washington Freedom',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/1/15/Washington_Freedom_logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/en/d/db/FreedomLogo09.PNG',
     color: '#003087',
   },
 ];
