@@ -16,12 +16,15 @@ export default function StoryViewer({
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(startIndex);
-  const [musicState, setMusicState] = useState<'none' | 'loading' | 'playing' | 'error'>('none');
+  const [musicState, setMusicState] = useState<'none' | 'loading' | 'playing' | 'paused' | 'error'>('none');
+  const [paused, setPaused] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const current = memories[index];
 
+  // Load + play music when slide changes
   useEffect(() => {
     let cancelled = false;
+    setPaused(false);
 
     async function loadMusic() {
       if (!audioRef.current) return;
@@ -43,6 +46,7 @@ export default function StoryViewer({
         if (cancelled) return;
 
         audioRef.current.src = src;
+        audioRef.current.load();
         await audioRef.current.play();
         if (!cancelled) setMusicState('playing');
       } catch (e) {
@@ -54,17 +58,31 @@ export default function StoryViewer({
     }
 
     loadMusic();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      audioRef.current?.pause();
+    };
   }, [index, current.musicKey]);
 
+  // Auto-advance (pause when music paused)
   useEffect(() => {
-    setMusicState(current.musicKey ? 'loading' : 'none');
-  }, [index]);
-
-  useEffect(() => {
+    if (paused) return;
     const t = setTimeout(next, SLIDE_MS);
     return () => clearTimeout(t);
-  }, [index]);
+  }, [index, paused]);
+
+  function toggleMusic() {
+    if (!audioRef.current) return;
+    if (paused) {
+      audioRef.current.play().catch(() => {});
+      setPaused(false);
+      setMusicState('playing');
+    } else {
+      audioRef.current.pause();
+      setPaused(true);
+      setMusicState('paused');
+    }
+  }
 
   function next() {
     if (index < memories.length - 1) setIndex(i => i + 1);
@@ -77,39 +95,49 @@ export default function StoryViewer({
   const musicLabel =
     musicState === 'loading' ? '♪ loading…' :
     musicState === 'playing' ? '♪ playing' :
-    musicState === 'error'   ? '♪ could not play' :
+    musicState === 'paused'  ? '⏸ paused' :
+    musicState === 'error'   ? '♪ could not load' :
     null;
 
   return (
     <div className="story-overlay" onClick={onClose}>
       <div className="story-card" onClick={(e) => e.stopPropagation()}>
 
+        {/* Progress bars */}
         <div className="story-bars">
           {memories.map((_, i) => (
             <div className="story-bar" key={i}>
               <span
-                className={`story-fill ${i < index ? 'done' : ''} ${i === index ? 'active' : ''}`}
+                className={`story-fill ${i < index ? 'done' : ''} ${i === index && !paused ? 'active' : ''}`}
                 style={{ ['--dur' as any]: `${SLIDE_MS}ms` }}
               />
             </div>
           ))}
         </div>
 
+        {/* Top row */}
         <div className="story-toprow">
-          {musicLabel && (
-            <span className={`story-music ${musicState === 'error' ? 'story-music-error' : ''}`}>
+          {current.musicKey && (
+            <button
+              className={`story-music ${musicState === 'error' ? 'story-music-error' : ''}`}
+              onClick={toggleMusic}
+              title={paused ? 'Resume music' : 'Pause music'}
+            >
               {musicLabel}
-            </span>
+            </button>
           )}
           <button className="story-close" onClick={onClose}>✕</button>
         </div>
 
+        {/* Photo */}
         <img className="story-img" src={current.url} alt={current.caption ?? ''} />
 
+        {/* Caption */}
         {current.caption && (
           <div className="story-caption">{current.caption}</div>
         )}
 
+        {/* Tap zones */}
         <button className="story-nav story-nav-left" onClick={prev} aria-label="previous" />
         <button className="story-nav story-nav-right" onClick={next} aria-label="next" />
       </div>
