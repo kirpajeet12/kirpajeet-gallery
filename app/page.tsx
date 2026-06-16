@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { list, getUrl } from 'aws-amplify/storage';
+import { list, getUrl, remove } from 'aws-amplify/storage';
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { client } from '@/lib/client';
 import UploadModal from './components/UploadModal';
+import EditModal from './components/EditModal';
 import StoryViewer from './components/StoryViewer';
 
 export type TileData = {
@@ -14,6 +15,7 @@ export type TileData = {
   caption?: string;
   musicKey?: string;
   musicTitle?: string;
+  dbId?: string;
 };
 
 function GalleryApp() {
@@ -25,6 +27,9 @@ function GalleryApp() {
   const [showUpload, setShowUpload] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [storyAt, setStoryAt] = useState<number | null>(null);
+  const [editing, setEditing] = useState<TileData | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<TileData | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (isOwner) setShowLogin(false);
@@ -51,6 +56,7 @@ function GalleryApp() {
             caption: meta?.caption ?? undefined,
             musicKey: meta?.musicKey ?? undefined,
             musicTitle: meta?.musicTitle ?? undefined,
+            dbId: meta?.id ?? undefined,
           } as TileData;
         })
       );
@@ -64,6 +70,24 @@ function GalleryApp() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function handleDelete(tile: TileData) {
+    setDeleting(true);
+    try {
+      await remove({ path: tile.key });
+      if (tile.musicKey && !tile.musicKey.startsWith('https://')) {
+        await remove({ path: tile.musicKey }).catch(() => {});
+      }
+      if (tile.dbId) {
+        await client.models.Memory.delete({ id: tile.dbId });
+      }
+      setTiles((prev) => prev.filter((t) => t.key !== tile.key));
+    } catch (e) {
+      console.error('Delete failed', e);
+    }
+    setDeleting(false);
+    setConfirmDelete(null);
+  }
 
   return (
     <>
@@ -107,6 +131,12 @@ function GalleryApp() {
                 {t.caption && <span>{t.caption}</span>}
               </div>
             )}
+            {isOwner && (
+              <div className="tile-actions" onClick={(e) => e.stopPropagation()}>
+                <button className="tile-btn" onClick={() => setEditing(t)}>Edit</button>
+                <button className="tile-btn tile-btn-delete" onClick={() => setConfirmDelete(t)}>Delete</button>
+              </div>
+            )}
           </div>
         ))}
       </main>
@@ -119,6 +149,35 @@ function GalleryApp() {
         <div className="overlay" onClick={() => setShowLogin(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <Authenticator />
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <EditModal
+          tile={editing}
+          onClose={() => setEditing(null)}
+          onSaved={load}
+        />
+      )}
+
+      {confirmDelete && (
+        <div className="overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete this photo?</h2>
+            <p className="confirm-text">This removes the photo and its music permanently from S3. Cannot be undone.</p>
+            <div className="row" style={{ marginTop: 20 }}>
+              <button
+                className="btn btn-danger"
+                onClick={() => handleDelete(confirmDelete)}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setConfirmDelete(null)} disabled={deleting}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
