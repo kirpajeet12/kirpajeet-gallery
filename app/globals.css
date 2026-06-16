@@ -83,6 +83,75 @@ button {
   border: 1px solid var(--border);
 }
 
+/* ---------- Team strip ---------- */
+.team-strip-wrap {
+  overflow: hidden;
+  padding: 20px 0 36px;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.team-strip-track {
+  display: flex;
+  gap: 40px;
+  width: max-content;
+  animation: team-scroll 18s linear infinite;
+}
+
+.team-strip-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes team-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.team-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.team-logo-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.team-logo-ring:hover {
+  transform: scale(1.12);
+}
+
+.team-logo-img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.team-logo-fallback {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  position: absolute;
+}
+
+.team-name {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 /* ---------- Gallery grid (masonry columns) ---------- */
 .gallery {
   max-width: 1400px;

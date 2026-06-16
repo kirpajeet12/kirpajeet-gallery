@@ -8,6 +8,7 @@ import { client } from '@/lib/client';
 import UploadModal from './components/UploadModal';
 import EditModal from './components/EditModal';
 import StoryViewer from './components/StoryViewer';
+import TeamStrip from './components/TeamStrip';
 
 export type TileData = {
   key: string;
@@ -114,6 +115,8 @@ function GalleryApp() {
         </h1>
         <p>A gallery of moments — tap any photo to play the story.</p>
       </header>
+
+      <TeamStrip />
 
       <main className="gallery">
         {loading && <div className="empty">Loading…</div>}
