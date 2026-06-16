@@ -30,12 +30,14 @@ export default function StoryViewer({
       if (!audioRef.current) return;
 
       if (!current.musicKey) {
+        console.log('No musicKey for this slide');
         audioRef.current.pause();
         audioRef.current.removeAttribute('src');
         setMusicState('none');
         return;
       }
 
+      console.log('Loading music from:', current.musicKey);
       setMusicState('loading');
 
       try {
