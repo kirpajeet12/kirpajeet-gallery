@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { list, getUrl } from 'aws-amplify/storage';
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
+import { client } from '@/lib/client';
 import UploadModal from './components/UploadModal';
 import StoryViewer from './components/StoryViewer';
 
@@ -31,12 +32,24 @@ function GalleryApp() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { items } = await list({ path: 'photos/' });
-      const photos = items.filter((item) => item.path !== 'photos/' && item.size && item.size > 0);
+      const [{ items }, { data: dbRecords }] = await Promise.all([
+        list({ path: 'photos/' }),
+        client.models.Memory.list(),
+      ]);
+
+      const metaMap = new Map(dbRecords.map((r) => [r.imageKey, r]));
+      const photos = items.filter((item) => item.path !== 'photos/' && (item.size ?? 0) > 0);
+
       const withUrls = await Promise.all(
         photos.map(async (item) => {
           const { url } = await getUrl({ path: item.path, options: { expiresIn: 3600 } });
-          return { key: item.path, url: url.toString() } as TileData;
+          const meta = metaMap.get(item.path);
+          return {
+            key: item.path,
+            url: url.toString(),
+            caption: meta?.caption ?? undefined,
+            musicKey: meta?.musicKey ?? undefined,
+          } as TileData;
         })
       );
       setTiles(withUrls.reverse());
@@ -84,12 +97,12 @@ function GalleryApp() {
           </div>
         )}
         {tiles.map((t, i) => (
-          <div className="tile" key={t.id} onClick={() => setStoryAt(i)}>
-            <img src={t.url} alt={t.caption ?? ''} />
+          <div className="tile" key={t.key} onClick={() => setStoryAt(i)}>
+            <img src={t.url} alt={t.caption ?? ''} loading="lazy" />
             {(t.caption || t.musicKey) && (
               <div className="meta">
                 {t.musicKey && <span className="note">♪</span>}
-                <span>{t.caption}</span>
+                {t.caption && <span>{t.caption}</span>}
               </div>
             )}
           </div>

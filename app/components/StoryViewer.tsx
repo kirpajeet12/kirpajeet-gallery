@@ -16,66 +16,73 @@ export default function StoryViewer({
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(startIndex);
-  const [musicUrl, setMusicUrl] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const current = memories[index];
 
+  // Load music for current slide
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      if (current.musicKey) {
-        const music = await getUrl({ path: current.musicKey });
-        if (!cancelled && audioRef.current) {
-          audioRef.current.src = music.url.toString();
-          audioRef.current.play().catch(() => {});
-        }
-      } else if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.removeAttribute('src');
-      }
-    })();
+    if (current.musicKey) {
+      getUrl({ path: current.musicKey }).then(({ url }) => {
+        if (cancelled || !audioRef.current) return;
+        audioRef.current.src = url.toString();
+        audioRef.current.play().catch(() => {});
+      });
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeAttribute('src');
+    }
     return () => { cancelled = true; };
-  }, [index, current]);
+  }, [index, current.musicKey]);
 
+  // Auto-advance
   useEffect(() => {
-    const t = setTimeout(() => next(), SLIDE_MS);
+    const t = setTimeout(next, SLIDE_MS);
     return () => clearTimeout(t);
   }, [index]);
 
   function next() {
-    if (index < memories.length - 1) setIndex(index + 1);
+    if (index < memories.length - 1) setIndex(i => i + 1);
     else onClose();
   }
   function prev() {
-    if (index > 0) setIndex(index - 1);
+    if (index > 0) setIndex(i => i - 1);
   }
 
   return (
-    <div className="story">
-      <div className="bars">
-        {memories.map((_, i) => (
-          <div className="bar" key={i}>
-            <span
-              className={`fill ${i < index ? 'done' : ''} ${i === index ? 'active' : ''}`}
-              style={{ ['--dur' as any]: `${SLIDE_MS}ms` }}
-            />
-          </div>
-        ))}
+    <div className="story-overlay" onClick={onClose}>
+      <div className="story-card" onClick={(e) => e.stopPropagation()}>
+
+        {/* Progress bars */}
+        <div className="story-bars">
+          {memories.map((_, i) => (
+            <div className="story-bar" key={i}>
+              <span
+                className={`story-fill ${i < index ? 'done' : ''} ${i === index ? 'active' : ''}`}
+                style={{ ['--dur' as any]: `${SLIDE_MS}ms` }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Top row: music indicator + close */}
+        <div className="story-toprow">
+          {current.musicKey && <span className="story-music">♪ playing</span>}
+          <button className="story-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Photo */}
+        <img className="story-img" src={current.url} alt={current.caption ?? ''} />
+
+        {/* Caption */}
+        {current.caption && (
+          <div className="story-caption">{current.caption}</div>
+        )}
+
+        {/* Tap zones: left = prev, right = next */}
+        <button className="story-nav story-nav-left" onClick={prev} aria-label="previous" />
+        <button className="story-nav story-nav-right" onClick={next} aria-label="next" />
       </div>
-
-      <div className="tag">
-        {current.musicKey ? <span>♪ playing</span> : null}
-      </div>
-
-      <button className="close" onClick={onClose} aria-label="close">×</button>
-
-      {current.url && <img src={current.url} alt={current.caption ?? ''} />}
-
-      {current.caption && <div className="caption">{current.caption}</div>}
-
-      <button className="nav left" onClick={prev} aria-label="previous" />
-      <button className="nav right" onClick={next} aria-label="next" />
 
       <audio ref={audioRef} loop />
     </div>

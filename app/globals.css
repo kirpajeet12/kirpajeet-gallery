@@ -204,26 +204,40 @@ button {
   min-height: 18px;
 }
 
-/* ---------- Story viewer ---------- */
-.story {
+/* ---------- Story viewer — Instagram popup ---------- */
+.story-overlay {
   position: fixed;
   inset: 0;
-  background: #000;
-  z-index: 60;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 60;
 }
 
-.story img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.story-card {
+  position: relative;
+  width: min(380px, 92vw);
+  height: min(680px, 92vh);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
 
-.story .bars {
+.story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Progress bars */
+.story-bars {
   position: absolute;
-  top: 12px;
+  top: 14px;
   left: 12px;
   right: 12px;
   display: flex;
@@ -231,85 +245,91 @@ button {
   z-index: 5;
 }
 
-.story .bar {
+.story-bar {
   flex: 1;
   height: 3px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
   border-radius: 2px;
   overflow: hidden;
 }
 
-.story .bar .fill {
+.story-fill {
+  display: block;
   height: 100%;
   background: #fff;
   width: 0;
 }
 
-.story .bar .fill.done {
-  width: 100%;
-}
+.story-fill.done { width: 100%; }
 
-.story .bar .fill.active {
+.story-fill.active {
   animation: grow var(--dur) linear forwards;
 }
 
 @keyframes grow {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
+  from { width: 0; }
+  to   { width: 100%; }
 }
 
-.story .caption {
+/* Top row */
+.story-toprow {
   position: absolute;
-  bottom: 40px;
+  top: 28px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 5;
+}
+
+.story-music {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.04em;
+}
+
+.story-close {
+  background: rgba(0, 0, 0, 0.35);
+  border: none;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* Caption */
+.story-caption {
+  position: absolute;
+  bottom: 28px;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 300;
-  letter-spacing: 0.04em;
-  padding: 0 30px;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
-}
-
-.story .close {
-  position: absolute;
-  top: 30px;
-  right: 20px;
-  font-size: 28px;
+  letter-spacing: 0.03em;
   color: #fff;
-  background: none;
-  border: none;
+  padding: 0 24px;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
   z-index: 5;
 }
 
-.story .nav {
+/* Tap zones */
+.story-nav {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 35%;
+  width: 40%;
   z-index: 4;
+  background: none;
+  border: none;
 }
 
-.story .nav.left {
-  left: 0;
-}
-
-.story .nav.right {
-  right: 0;
-}
-
-.tag {
-  position: absolute;
-  top: 28px;
-  left: 16px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.story-nav-left  { left: 0; }
+.story-nav-right { right: 0; }
