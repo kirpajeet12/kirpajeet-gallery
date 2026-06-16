@@ -76,7 +76,7 @@ export default function UploadModal({
     if (!photo) { setStatus('Pick a photo first.'); return; }
     setBusy(true);
     try {
-      const stamp = Date.now();
+      const stamp = Math.floor(Date.now() / 1000);
       const photoKey = `photos/${stamp}-${photo.name}`;
       setStatus('Uploading photo…');
       await uploadData({ path: photoKey, data: photo }).result;
