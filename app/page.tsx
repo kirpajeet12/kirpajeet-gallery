@@ -37,10 +37,12 @@ function GalleryApp() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ items }, { data: dbRecords }] = await Promise.all([
+      const [{ items }, dbResult] = await Promise.all([
         list({ path: 'photos/' }),
-        client.models.Memory.list(),
+        client.models.Memory.list({ authMode: 'userPool' } as any)
+          .catch(() => client.models.Memory.list()),
       ]);
+      const dbRecords = dbResult.data ?? [];
 
       const metaMap = new Map(dbRecords.map((r) => [r.imageKey, r]));
       const photos = items.filter((item) => item.path !== 'photos/' && (item.size ?? 0) > 0);
