@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getUrl } from 'aws-amplify/storage';
-import type { Memory } from '@/lib/client';
+import type { TileData } from '@/app/page';
 
 const SLIDE_MS = 6000;
 
@@ -11,23 +11,19 @@ export default function StoryViewer({
   startIndex,
   onClose,
 }: {
-  memories: Memory[];
+  memories: TileData[];
   startIndex: number;
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(startIndex);
-  const [imgUrl, setImgUrl] = useState('');
+  const [musicUrl, setMusicUrl] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const current = memories[index];
 
-  // Load the image + music for the current slide
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const img = await getUrl({ path: current.imageKey });
-      if (!cancelled) setImgUrl(img.url.toString());
-
       if (current.musicKey) {
         const music = await getUrl({ path: current.musicKey });
         if (!cancelled && audioRef.current) {
@@ -39,12 +35,9 @@ export default function StoryViewer({
         audioRef.current.removeAttribute('src');
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [index, current]);
 
-  // Auto-advance
   useEffect(() => {
     const t = setTimeout(() => next(), SLIDE_MS);
     return () => clearTimeout(t);
@@ -64,9 +57,7 @@ export default function StoryViewer({
         {memories.map((_, i) => (
           <div className="bar" key={i}>
             <span
-              className={`fill ${i < index ? 'done' : ''} ${
-                i === index ? 'active' : ''
-              }`}
+              className={`fill ${i < index ? 'done' : ''} ${i === index ? 'active' : ''}`}
               style={{ ['--dur' as any]: `${SLIDE_MS}ms` }}
             />
           </div>
@@ -77,11 +68,9 @@ export default function StoryViewer({
         {current.musicKey ? <span>♪ playing</span> : null}
       </div>
 
-      <button className="close" onClick={onClose} aria-label="close">
-        ×
-      </button>
+      <button className="close" onClick={onClose} aria-label="close">×</button>
 
-      {imgUrl && <img src={imgUrl} alt={current.caption ?? ''} />}
+      {current.url && <img src={current.url} alt={current.caption ?? ''} />}
 
       {current.caption && <div className="caption">{current.caption}</div>}
 

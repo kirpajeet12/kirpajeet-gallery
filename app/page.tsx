@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { getUrl } from 'aws-amplify/storage';
+import { list, getUrl } from 'aws-amplify/storage';
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
-import { client, type Memory } from '@/lib/client';
 import UploadModal from './components/UploadModal';
 import StoryViewer from './components/StoryViewer';
 
-type TileData = Memory & { url: string };
+export type TileData = {
+  key: string;
+  url: string;
+  caption?: string;
+  musicKey?: string;
+};
 
 function GalleryApp() {
   const { authStatus, signOut } = useAuthenticator((c) => [c.authStatus]);
@@ -20,22 +24,25 @@ function GalleryApp() {
   const [showLogin, setShowLogin] = useState(false);
   const [storyAt, setStoryAt] = useState<number | null>(null);
 
-  // Auto-close login overlay once authenticated
   useEffect(() => {
     if (isOwner) setShowLogin(false);
   }, [isOwner]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await client.models.Memory.list();
-    const sorted = [...data].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const withUrls = await Promise.all(
-      sorted.map(async (m) => {
-        const u = await getUrl({ path: m.imageKey });
-        return { ...m, url: u.url.toString() };
-      })
-    );
-    setTiles(withUrls);
+    try {
+      const { items } = await list({ path: 'photos/' });
+      const photos = items.filter((item) => item.path !== 'photos/' && item.size && item.size > 0);
+      const withUrls = await Promise.all(
+        photos.map(async (item) => {
+          const { url } = await getUrl({ path: item.path, options: { expiresIn: 3600 } });
+          return { key: item.path, url: url.toString() } as TileData;
+        })
+      );
+      setTiles(withUrls.reverse());
+    } catch (e) {
+      console.error('Failed to load photos:', e);
+    }
     setLoading(false);
   }, []);
 
